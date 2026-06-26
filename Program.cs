@@ -5,8 +5,25 @@ using TaskStatus = hello_dotnet.Models.TaskStatus;
 
 var builder = WebApplication.CreateBuilder(args);
 
+var usePg = string.Equals(Environment.GetEnvironmentVariable("USE_PG_EFCORE"), "true", StringComparison.OrdinalIgnoreCase);
+var useMySql = string.Equals(Environment.GetEnvironmentVariable("USE_MYSQL_EFCORE"), "true", StringComparison.OrdinalIgnoreCase);
+var connectionString = Environment.GetEnvironmentVariable("DB_CONNECTION_STRING");
+
 builder.Services.AddDbContext<AppDbContext>(options =>
-    options.UseInMemoryDatabase("PeopleDb"));
+{
+    if (usePg && !string.IsNullOrEmpty(connectionString))
+    {
+        options.UseNpgsql(connectionString);
+    }
+    else if (useMySql && !string.IsNullOrEmpty(connectionString))
+    {
+        options.UseMySql(connectionString, ServerVersion.AutoDetect(connectionString));
+    }
+    else
+    {
+        options.UseInMemoryDatabase("PeopleDb");
+    }
+});
 
 builder.Services.AddOpenApi();
 
